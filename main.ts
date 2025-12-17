@@ -1,17 +1,20 @@
 import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import {getPlaylistVideos} from './grpFunctions';
 
 // Remember to rename these classes and interfaces!
 
-interface MyPluginSettings {
-	mySetting: string;
+interface HotMessSettings {
+	APIKey: string,
+	videoFolder: string,
 }
 
-const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: 'default'
+const DEFAULT_SETTINGS: HotMessSettings = {
+	APIKey: 'default',
+	videoFolder: 'default'
 }
 
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+export default class HotMess extends Plugin {
+	settings: HotMessSettings;
 
 	async onload() {
 		await this.loadSettings();
@@ -19,7 +22,7 @@ export default class MyPlugin extends Plugin {
 		// This creates an icon in the left ribbon.
 		const ribbonIconEl = this.addRibbonIcon('dice', 'Sample Plugin', (evt: MouseEvent) => {
 			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
+			new Notice('This is a custom notice!');
 		});
 		// Perform additional things with the ribbon
 		ribbonIconEl.addClass('my-plugin-ribbon-class');
@@ -45,6 +48,36 @@ export default class MyPlugin extends Plugin {
 				editor.replaceSelection('Sample Editor Command');
 			}
 		});
+		// GRP - List all Files command
+		this.addCommand({
+			id: 'list-all-files',
+			name: 'List all files',
+			editorCallback: (editor: Editor, view: MarkdownView) => {
+				const activeFile = app.workspace.getActiveFile();
+				var allFiles = app.vault.getFiles();
+				allFiles.forEach(file => {
+					// The wikilink to the file, using the base name as an alias
+					// if there are duplicate file names in different folders.
+					// The alias is not used when the file name is unique.
+					// That's the right result, but I don't understand why.
+					const link = app.fileManager.generateMarkdownLink(file, "", "", file.basename);
+					// Outputs link to file at cursor
+					editor.replaceSelection(link+"\n");
+				});
+			}
+		});
+		// GRP - Request to Youtube url
+		this.addCommand({
+			id: 'request-youtube-pl',
+			name: 'Request Youtube Playlist',
+			editorCallback: async (editor: Editor, view: MarkdownView) => {
+				const plId = "PL3NaIVgSlAVIDaYB0yeH3lnB9CZ0Hp_xs";
+				// const apiKey = "AIzaSyA_ZTDB3Q2KVEkHK9bwi50MZj9r3kBofJk";
+				const plData = await getPlaylistVideos(plId, this.settings.APIKey);
+				console.log(plData);
+
+			}
+		});
 		// This adds a complex command that can check whether the current state of the app allows execution of the command
 		this.addCommand({
 			id: 'open-sample-modal-complex',
@@ -59,14 +92,13 @@ export default class MyPlugin extends Plugin {
 						new SampleModal(this.app).open();
 					}
 
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
-				}
+					// This command will only show up in Command Palette when the check functi`on` returns true
+					return true;`
+					`				}
 			}
 		});
-
 		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
+		this.addSettingTab(new HotMessSettingTab(this.app, this));
 
 		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
 		// Using this function will automatically remove the event listener when this plugin is disabled.
@@ -91,6 +123,32 @@ export default class MyPlugin extends Plugin {
 	}
 }
 
+class grpModal extends Modal {
+	message: string;
+
+	constructor(app:App, message: string) {
+		super(app);
+		this.message = message;
+	}
+
+	onOpen(){
+		this.display();
+	}
+
+	display(): void {
+		const { contentEl } = this;
+		// contentEl.empty();
+		// contentEl.setText(this.message);
+		contentEl.createEl("h1", {text: this.message})
+		contentEl.createEl('p', {text: "Garbage Out"})
+	}
+
+	onClose(){
+		const {contentEl} = this;
+		contentEl.empty();
+	}
+}
+
 class SampleModal extends Modal {
 	constructor(app: App) {
 		super(app);
@@ -98,7 +156,7 @@ class SampleModal extends Modal {
 
 	onOpen() {
 		const {contentEl} = this;
-		contentEl.setText('Woah!');
+		contentEl.setText('Butter');
 	}
 
 	onClose() {
@@ -107,10 +165,10 @@ class SampleModal extends Modal {
 	}
 }
 
-class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
+class HotMessSettingTab extends PluginSettingTab {
+	plugin: HotMessPlugin;
 
-	constructor(app: App, plugin: MyPlugin) {
+	constructor(app: App, plugin: HotMessPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
@@ -121,14 +179,16 @@ class SampleSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		new Setting(containerEl)
-			.setName('Setting #1')
-			.setDesc('It\'s a secret')
+			.setName('API Key')
+			.setDesc('Youtube API Key')
 			.addText(text => text
-				.setPlaceholder('Enter your secret')
-				.setValue(this.plugin.settings.mySetting)
+				.setPlaceholder('API Key')
+				.setValue(this.plugin.settings.APIKey)
 				.onChange(async (value) => {
-					this.plugin.settings.mySetting = value;
+					this.plugin.settings.APIKey = value;
 					await this.plugin.saveSettings();
-				}));
+				})
+			);
+
 	}
 }
