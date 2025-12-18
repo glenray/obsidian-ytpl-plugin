@@ -5,3 +5,9 @@ export async function getPlaylistVideos(plId, apiKey): Promise<playlistInfo>{
 	return playlistInfo;
 }
 
+export async function reqYoutubePL(editor: Editor, view: MarkdownView, apiKey){
+	const plId = "PL3NaIVgSlAVIDaYB0yeH3lnB9CZ0Hp_xs";
+	const plData = await getPlaylistVideos(plId, apiKey);
+	console.log(plData);
+	console.log(editor);
+}

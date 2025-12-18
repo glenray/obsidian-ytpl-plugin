@@ -1,5 +1,5 @@
 import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
-import {getPlaylistVideos} from './grpFunctions';
+import {getPlaylistVideos, reqYoutubePL} from './grpFunctions';
 
 // Remember to rename these classes and interfaces!
 
@@ -31,23 +31,6 @@ export default class HotMess extends Plugin {
 		const statusBarItemEl = this.addStatusBarItem();
 		statusBarItemEl.setText('Status Bar Text');
 
-		// This adds a simple command that can be triggered anywhere
-		this.addCommand({
-			id: 'open-sample-modal-simple',
-			name: 'Open sample modal (simple)',
-			callback: () => {
-				new SampleModal(this.app).open();
-			}
-		});
-		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: 'sample-editor-command',
-			name: 'Sample editor command',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				console.log(editor.getSelection());
-				editor.replaceSelection('Sample Editor Command');
-			}
-		});
 		// GRP - List all Files command
 		this.addCommand({
 			id: 'list-all-files',
@@ -70,48 +53,12 @@ export default class HotMess extends Plugin {
 		this.addCommand({
 			id: 'request-youtube-pl',
 			name: 'Request Youtube Playlist',
-			editorCallback: async (editor: Editor, view: MarkdownView) => {
-				const plId = "PL3NaIVgSlAVIDaYB0yeH3lnB9CZ0Hp_xs";
-				// const apiKey = "AIzaSyA_ZTDB3Q2KVEkHK9bwi50MZj9r3kBofJk";
-				const plData = await getPlaylistVideos(plId, this.settings.APIKey);
-				console.log(plData);
-
-			}
+			// the callback function automatically gets the editor and markdown view parameters. I also want it to get the APIKey. This is how we pass it the additional parameter.
+			editorCallback: (Editor, MarkdownView) => reqYoutubePL(Editor, MarkdownView, this.settings.APIKey)
 		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		this.addCommand({
-			id: 'open-sample-modal-complex',
-			name: 'Open sample modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
 
-					// This command will only show up in Command Palette when the check functi`on` returns true
-					return true;`
-					`				}
-			}
-		});
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new HotMessSettingTab(this.app, this));
-
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			console.log('click', evt);
-		});
-
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
-	}
-
-	onunload() {
-
 	}
 
 	async loadSettings() {
@@ -149,21 +96,6 @@ class grpModal extends Modal {
 	}
 }
 
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
-	}
-
-	onOpen() {
-		const {contentEl} = this;
-		contentEl.setText('Butter');
-	}
-
-	onClose() {
-		const {contentEl} = this;
-		contentEl.empty();
-	}
-}
 
 class HotMessSettingTab extends PluginSettingTab {
 	plugin: HotMessPlugin;
@@ -190,5 +122,41 @@ class HotMessSettingTab extends PluginSettingTab {
 				})
 			);
 
+		new Setting(containerEl)
+			.setName('Video Folder')
+			.setDesc('Select folder for videos')
+			.addDropdown(dropdown => {
+				const directories = this.getDirectories();
+
+				directories.forEach((dir) => {
+					dropdown.addOption(dir, dir);
+				});
+
+				dropdown
+					.setValue(this.plugin.settings.videoFolder || '')
+					.onChange(async (value) => {
+						console.log(this.plugin.settings);
+						this.plugin.settings.videoFolder = value;
+						await this.plugin.saveSettings();
+					});
+			});
+	}
+
+	private getDirectories(): string[] {
+		const directories: string[] = ['/']; //Root directory
+		const vault = this.app.vault;
+
+		const traverse = (folder: any) => {
+			if (folder.children){
+				folder.children.forEach((child:any) => {
+					if(child.children){ // It's a folder
+						directories.push(child.path);
+						traverse(child);
+					}
+				});
+			}
+		};
+		traverse(vault.getRoot());
+		return directories.sort();
 	}
 }
