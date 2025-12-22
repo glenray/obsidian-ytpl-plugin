@@ -54,7 +54,7 @@ export default class HotMess extends Plugin {
 			id: 'request-youtube-pl',
 			name: 'Request Youtube Playlist',
 			// the callback function automatically gets the editor and markdown view parameters. I also want it to get the APIKey. This is how we pass it the additional parameter.
-			editorCallback: (Editor, MarkdownView) => reqYoutubePL(Editor, MarkdownView, this.settings.APIKey)
+			editorCallback: (Editor, MarkdownView) => reqYoutubePL(Editor, MarkdownView, this.settings)
 		});
 
 		// This adds a settings tab so the user can configure various aspects of the plugin

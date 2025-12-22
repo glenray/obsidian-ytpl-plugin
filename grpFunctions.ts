@@ -5,9 +5,16 @@ export async function getPlaylistVideos(plId, apiKey): Promise<playlistInfo>{
 	return playlistInfo;
 }
 
-export async function reqYoutubePL(editor: Editor, view: MarkdownView, apiKey){
+export async function reqYoutubePL(editor: Editor, view: MarkdownView, settings){
 	const plId = "PL3NaIVgSlAVIDaYB0yeH3lnB9CZ0Hp_xs";
-	const plData = await getPlaylistVideos(plId, apiKey);
-	console.log(plData);
-	console.log(editor);
+	const plData = await getPlaylistVideos(plId, settings.APIKey);
+	for (const obj of plData){
+		console.log(`[${obj.snippet.title}](https://www.youtube.com/watch?v=${obj.snippet.resourceId.videoId})`);
+	}
+}
+
+
+function sanitizeFileName(fileName) {
+    // Remove illegal characters: \ / : * ? " < > |
+    return fileName.replace(/[\\/:*?"<>|]/g, '');
 }
