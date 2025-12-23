@@ -1,3 +1,5 @@
+import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+
 interface ytPlVideo {
 	vidLink: string,
 	vidId: string,
@@ -37,17 +39,52 @@ export async function reqYoutubePL(
 	editor: Editor, 
 	view: MarkdownView, 
 	that){
-	// const url = await that.app.workspace.activeLeaf.view.prompt({
-	// 	title: "Enter Youtube Playlist URL",
-	// 	placeholder: "https://example.com"
-	// });
 	const plId = "PL3NaIVgSlAVIDaYB0yeH3lnB9CZ0Hp_xs";
 	const plData = await getPlaylistVideos(plId, that.settings.APIKey);
 	console.log(plData);
+	new URLModal(this.app).open();
 }
 
 
 function sanitizeFileName(fileName) {
     // Remove illegal characters: \ / : * ? " < > |
     return fileName.replace(/[\\/:*?"<>|]/g, '');
+}
+
+class URLModal extends Modal {
+	result: string;
+
+	constructor(app: App) {
+		super(app);
+	}
+
+	onOpen() {
+		const { contentEl } = this;
+		contentEl.createEl('h2', { text: 'Enter URL' });
+
+		let inputValue = '';
+
+		const inputEl = contentEl.createEl('input', {
+			type: 'text',
+			placeholder: 'https://example.com'
+		});
+
+		contentEl.createEl('br');
+
+		const submitBtn = contentEl.createEl('button', { text: 'Submit' });
+		submitBtn.onclick = () => {
+			inputValue = inputEl.value;
+			console.log('URL entered:', inputValue);
+			this.close();
+		};
+
+		const cancelBtn = contentEl.createEl('button', { text: 'Cancel' });
+		cancelBtn.onclick = () => {
+			this.close();
+		};
+	}
+
+	onClose() {
+		const { contentEl } = contentEl.empty();
+	}
 }

@@ -23,3 +23,5 @@ data.json
 
 # Exclude sublime text workspace
 *sublime-workspace
+
+brave*
