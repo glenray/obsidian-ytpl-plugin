@@ -136,6 +136,7 @@ export default class YouTubePlaylistPlugin extends Plugin {
 		}
 	}
 
+	// The playlist metadata has been found and clicking OK button launches this method
 	async createVideoNotes(playlistData: YouTubePlaylistData): Promise<void> {
 		try {
 			// Create folder structure
