@@ -225,7 +225,7 @@ created: ${new Date().toISOString()}
 # ${video.title}
 
 **Position in Playlist:** ${video.position} of ${playlistData.itemCount}
-**Playlist:** [[${this.sanitizeFileName(playlistData.title)}|${playlistData.title}]]
+**Playlist:** [[${this.sanitizeFileName(`${playlistData.title} - ${playlistData.channelTitle}`)}|${playlistData.title}]]
 **Channel:** ${playlistData.channelTitle}
 **Published:** ${new Date(video.publishedAt).toLocaleDateString()}
 
