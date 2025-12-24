@@ -149,9 +149,6 @@ export default class YouTubePlaylistPlugin extends Plugin {
 			// Create main playlist note
 			await this.createPlaylistNote(fullPath, playlistData);
 
-			// Create index note for the playlist
-			await this.createPlaylistIndexNote(fullPath, playlistData);
-
 			// Create individual notes for each video
 			let createdCount = 0;
 			for (const video of playlistData.videos) {
@@ -198,39 +195,15 @@ ${playlistData.videos.map(video =>
 ## Links
 
 - [View on YouTube](${playlistData.playlistUrl})
-- [[00 - Playlist Index|Video Index]]
 
 ## Notes
 
-<!-- Add your notes about this playlist here -->
+
 `;
 
 		await this.app.vault.create(fileName, content);
 	}
 
-	async createPlaylistIndexNote(folderPath: string, playlistData: YouTubePlaylistData): Promise<void> {
-		const fileName = `${folderPath}/00 - Playlist Index.md`;
-		
-		const content = `---
-type: youtube-playlist-index
-playlist: ${playlistData.title}
-video_count: ${playlistData.itemCount}
-created: ${new Date().toISOString()}
----
-
-# Video Index - ${playlistData.title}
-
-**Back to:** [[${this.sanitizeFileName(playlistData.title)}|${playlistData.title}]]
-
-## All Videos (${playlistData.itemCount})
-
-${playlistData.videos.map(video => 
-	`${video.position}. [[${String(video.position).padStart(2, '0')} - ${this.sanitizeFileName(video.title)}|${video.title}]]`
-).join('\n')}
-`;
-
-		await this.app.vault.create(fileName, content);
-	}
 
 	async createVideoNote(folderPath: string, video: YouTubeVideo, playlistData: YouTubePlaylistData): Promise<void> {
 		const fileName = `${folderPath}/${String(video.position).padStart(2, '0')} - ${this.sanitizeFileName(video.title)}.md`;
@@ -273,7 +246,6 @@ ${video.description || 'No description available'}
 ${video.position > 1 ? `← Previous: [[${String(video.position - 1).padStart(2, '0')} - ${this.sanitizeFileName(playlistData.videos[video.position - 2]?.title)}]]` : ''}
 ${video.position < playlistData.itemCount ? `Next: [[${String(video.position + 1).padStart(2, '0')} - ${this.sanitizeFileName(playlistData.videos[video.position]?.title)}]] →` : ''}
 
-**Back to:** [[${this.sanitizeFileName(playlistData.title)}|Playlist]] | [[00 - Playlist Index|Index]]
 `;
 
 		await this.app.vault.create(fileName, content);
