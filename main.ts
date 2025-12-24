@@ -89,7 +89,6 @@ export default class YouTubePlaylistPlugin extends Plugin {
 			}
 
 			const playlist = playlistData.items;
-			console.log(playlist);
 			const itemCount = playlist[0].contentDetails.itemCount;
 
 			// Fetch all playlist items (videos) - handle pagination
@@ -119,7 +118,6 @@ export default class YouTubePlaylistPlugin extends Plugin {
 				nextPageToken = itemsData.nextPageToken || '';
 			} while (nextPageToken);
 
-			// console.log(playlist);
 			return {
 				playlistId: playlistId,
 				title: playlist[0].snippet.title,
@@ -140,7 +138,7 @@ export default class YouTubePlaylistPlugin extends Plugin {
 	async createVideoNotes(playlistData: YouTubePlaylistData): Promise<void> {
 		try {
 			// Create folder structure
-			const playlistFolderName = this.sanitizeFileName(playlistData.title);
+			const playlistFolderName = this.sanitizeFileName(`${playlistData.title} - ${playlistData.channelTitle}`);
 			const fullPath = `${this.settings.notesFolder}/${playlistFolderName}`;
 			
 			// Ensure the folder exists
@@ -164,7 +162,7 @@ export default class YouTubePlaylistPlugin extends Plugin {
 	}
 
 	async createPlaylistNote(folderPath: string, playlistData: YouTubePlaylistData): Promise<void> {
-		const fileName = `${folderPath}/${this.sanitizeFileName(playlistData.title)}.md`;
+		const fileName = `${folderPath}/${this.sanitizeFileName(`${playlistData.title} - ${playlistData.channelTitle}`)}.md`;
 		
 		const content = `---
 type: youtube-playlist
@@ -205,7 +203,10 @@ ${playlistData.videos.map(video =>
 	}
 
 
-	async createVideoNote(folderPath: string, video: YouTubeVideo, playlistData: YouTubePlaylistData): Promise<void> {
+	async createVideoNote(
+		folderPath: string, 
+		video: YouTubeVideo, 
+		playlistData: YouTubePlaylistData): Promise<void> {
 		const fileName = `${folderPath}/${String(video.position).padStart(2, '0')} - ${this.sanitizeFileName(video.title)}.md`;
 		const videoUrl = `https://www.youtube.com/watch?v=${video.videoId}`;
 		
