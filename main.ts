@@ -166,10 +166,10 @@ export default class YouTubePlaylistPlugin extends Plugin {
 		
 		const content = `---
 type: youtube-playlist
-title: ${playlistData.title}
+title: ${escapeYamlValue(playlistData.title)}
 playlist_id: ${playlistData.playlistId}
 url: ${playlistData.playlistUrl}
-channel: ${playlistData.channelTitle}
+channel: ${escapeYamlValue(playlistData.channelTitle)}
 video_count: ${playlistData.itemCount}
 created: ${new Date().toISOString()}
 ---
@@ -212,10 +212,10 @@ ${playlistData.videos.map(video =>
 		
 		const content = `---
 type: youtube-video
-title: ${video.title}
+title: ${escapeYamlValue(video.title)}
 video_id: ${video.videoId}
 url: ${videoUrl}
-playlist: ${playlistData.title}
+playlist: ${escapeYamlValue(playlistData.title)}
 playlist_url: ${playlistData.playlistUrl}
 position: ${video.position}
 published: ${video.publishedAt}
@@ -410,4 +410,55 @@ class YouTubePlaylistSettingsTab extends PluginSettingTab {
 			ol.createEl('li', { text: 'Copy the API key and paste it above' });
 		});
 	}
+}
+
+
+// Escape property values that might break the metadata
+function escapeYamlValue(value: any): string {
+	// Handle null and undefined
+	if (value === null || value === undefined) {
+		return 'null';
+  }
+  
+  // Handle booleans and numbers
+  if (typeof value === 'boolean' || typeof value === 'number') {
+	return value.toString();
+  }
+  
+  // Handle arrays
+  if (Array.isArray(value)) {
+	return `[${value.map(v => escapeYamlValue(v)).join(', ')}]`;
+  }
+  
+  // Convert to string
+  if (typeof value !== 'string') {
+	value = String(value);
+  }
+  
+  const trimmed = value.trim();
+  
+  // Check if quoting is needed
+  const needsQuoting = (
+	trimmed === '' ||
+	/[:\-\[\]{}#&*!|>'"%@`]/.test(trimmed) ||
+	/^[\-?:,\[\]{}#&*!|>'"%@`]/.test(trimmed) ||
+	/^(true|false|yes|no|on|off|null|~)$/i.test(trimmed) ||
+	/^[0-9]/.test(trimmed) ||
+	/:\s/.test(trimmed) ||
+	trimmed !== value
+  );
+  
+  if (!needsQuoting) {
+	return trimmed;
+  }
+  
+  // Escape and quote
+  const escaped = trimmed
+	.replace(/\\/g, '\\\\')
+	.replace(/"/g, '\\"')
+	.replace(/\n/g, '\\n')
+	.replace(/\r/g, '\\r')
+	.replace(/\t/g, '\\t');
+  
+  return `"${escaped}"`;
 }
