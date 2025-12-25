@@ -186,9 +186,15 @@ ${playlistData.description || 'No description available'}
 
 ## Videos
 
-${playlistData.videos.map(video => 
-	`${video.position}. [[${String(video.position).padStart(2, '0')} - ${this.sanitizeFileName(video.title)}|${video.title}]]`
-).join('\n')}
+\`\`\`base
+views:
+  - type: table
+    name: Videos
+    filters:
+      and:
+        - file.folder == this.file.folder
+        - file.name != this.file.name
+\`\`\`
 
 ## Links
 
@@ -269,7 +275,7 @@ ${video.position < playlistData.itemCount ? `Next: [[${String(video.position + 1
 	private sanitizeFileName(name: string): string {
 		// Remove invalid characters for file names
 		return name
-			.replace(/[\\/:*?"<>|]/g, '-')
+			.replace(/[\\[\]/:*?"<>#^|]/g, '-')
 			.replace(/\s+/g, ' ')
 			.trim()
 			.substring(0, 200); // Limit length
