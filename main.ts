@@ -273,9 +273,14 @@ ${video.position < playlistData.itemCount ? `Next: [[${String(video.position + 1
 	}
 
 	private sanitizeFileName(name: string): string {
-		// Remove invalid characters for file names
+		// Remove invalid characters (\/:|[]{}<>#?*'"^) for file names including - '[]^|#' which interfere
+		// with Obsidian wikilinks
 		return name
-			.replace(/[\\[\]/:*?"<>#^|]/g, '-')
+			.replace(/[\\/:|]/g, '-')
+			.replace(/[\[<{]/g , '(')
+			.replace(/[\]>}]/g , ')')
+			.replace(/[#]/g, 'no ')
+			.replace(/[?*'"^]/g, '')
 			.replace(/\s+/g, ' ')
 			.trim()
 			.substring(0, 200); // Limit length
