@@ -1,4 +1,5 @@
-export const playlistTemplate = (playlistData, escapeYamlValue) => `---
+// The template for the playlist note
+export const playlistTemplate = (playlistData) => `---
 type: youtube-playlist
 title: ${escapeYamlValue(playlistData.title)}
 playlist_id: ${playlistData.playlistId}
@@ -39,7 +40,9 @@ views:
 
 `;
 
-export const videoNoteTemplate = (playlistData, video, escapeYamlValue, sanitizeFileName) => `---
+
+// The template for each video note
+export const videoNoteTemplate = (playlistData, video, sanitizeFileName) => `---
 type: youtube-video
 title: ${escapeYamlValue(video.title)}
 video_id: ${video.videoId}
@@ -77,3 +80,53 @@ ${video.position > 1 ? `← Previous: [[${String(video.position - 1).padStart(2,
 ${video.position < playlistData.itemCount ? `Next: [[${String(video.position + 1).padStart(2, '0')} - ${sanitizeFileName(playlistData.videos[video.position]?.title)}]] →` : ''}
 
 `;
+
+// Escape property values that might break the metadata
+function escapeYamlValue(value: any): string {
+  // Handle null and undefined
+  if (value === null || value === undefined) {
+    return 'null';
+  }
+  
+  // Handle booleans and numbers
+  if (typeof value === 'boolean' || typeof value === 'number') {
+  return value.toString();
+  }
+  
+  // Handle arrays
+  if (Array.isArray(value)) {
+  return `[${value.map(v => escapeYamlValue(v)).join(', ')}]`;
+  }
+  
+  // Convert to string
+  if (typeof value !== 'string') {
+  value = String(value);
+  }
+  
+  const trimmed = value.trim();
+  
+  // Check if quoting is needed
+  const needsQuoting = (
+  trimmed === '' ||
+  /[:\-\[\]{}#&*!|>'"%@`]/.test(trimmed) ||
+  /^[\-?:,\[\]{}#&*!|>'"%@`]/.test(trimmed) ||
+  /^(true|false|yes|no|on|off|null|~)$/i.test(trimmed) ||
+  /^[0-9]/.test(trimmed) ||
+  /:\s/.test(trimmed) ||
+  trimmed !== value
+  );
+  
+  if (!needsQuoting) {
+  return trimmed;
+  }
+  
+  // Escape and quote
+  const escaped = trimmed
+  .replace(/\\/g, '\\\\')
+  .replace(/"/g, '\\"')
+  .replace(/\n/g, '\\n')
+  .replace(/\r/g, '\\r')
+  .replace(/\t/g, '\\t');
+  
+  return `"${escaped}"`;
+}

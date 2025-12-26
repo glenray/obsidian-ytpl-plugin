@@ -165,8 +165,7 @@ export default class YouTubePlaylistPlugin extends Plugin {
 
 	async createPlaylistNote(folderPath: string, playlistData: YouTubePlaylistData): Promise<void> {
 		const fileName = `${folderPath}/${this.sanitizeFileName(`${playlistData.title} - ${playlistData.channelTitle}`)}.md`;
-		const content = playlistTemplate(playlistData, escapeYamlValue);
-
+		const content = playlistTemplate(playlistData);
 		await this.app.vault.create(fileName, content);
 	}
 
@@ -177,7 +176,7 @@ export default class YouTubePlaylistPlugin extends Plugin {
 		playlistData: YouTubePlaylistData): Promise<void> {
 		const fileName = `${folderPath}/${String(video.position).padStart(2, '0')} - ${this.sanitizeFileName(video.title)}.md`;
 				
-		const content = videoNoteTemplate(playlistData, video, escapeYamlValue, this.sanitizeFileName);
+		const content = videoNoteTemplate(playlistData, video, this.sanitizeFileName);
 
 		await this.app.vault.create(fileName, content);
 	}
@@ -348,55 +347,4 @@ class YouTubePlaylistSettingsTab extends PluginSettingTab {
 			ol.createEl('li', { text: 'Copy the API key and paste it above' });
 		});
 	}
-}
-
-
-// Escape property values that might break the metadata
-function escapeYamlValue(value: any): string {
-	// Handle null and undefined
-	if (value === null || value === undefined) {
-		return 'null';
-  }
-  
-  // Handle booleans and numbers
-  if (typeof value === 'boolean' || typeof value === 'number') {
-	return value.toString();
-  }
-  
-  // Handle arrays
-  if (Array.isArray(value)) {
-	return `[${value.map(v => escapeYamlValue(v)).join(', ')}]`;
-  }
-  
-  // Convert to string
-  if (typeof value !== 'string') {
-	value = String(value);
-  }
-  
-  const trimmed = value.trim();
-  
-  // Check if quoting is needed
-  const needsQuoting = (
-	trimmed === '' ||
-	/[:\-\[\]{}#&*!|>'"%@`]/.test(trimmed) ||
-	/^[\-?:,\[\]{}#&*!|>'"%@`]/.test(trimmed) ||
-	/^(true|false|yes|no|on|off|null|~)$/i.test(trimmed) ||
-	/^[0-9]/.test(trimmed) ||
-	/:\s/.test(trimmed) ||
-	trimmed !== value
-  );
-  
-  if (!needsQuoting) {
-	return trimmed;
-  }
-  
-  // Escape and quote
-  const escaped = trimmed
-	.replace(/\\/g, '\\\\')
-	.replace(/"/g, '\\"')
-	.replace(/\n/g, '\\n')
-	.replace(/\r/g, '\\r')
-	.replace(/\t/g, '\\t');
-  
-  return `"${escaped}"`;
 }
