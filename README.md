@@ -1,6 +1,6 @@
 # Glen's Hot Mess Plugin
 
-## Fetch YouTube Playlist
+## Command: Fetch YouTube Playlist 
 
 This command prompts the user for a url to a YouTube playlist. A video note is created for each video. A playlist note is also created which lists all of the related videos. The video notes and the playlist notes are all saved in a separate directory making it easy to stay organized. 
 
