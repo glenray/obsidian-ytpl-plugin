@@ -4,6 +4,7 @@ brave://leo-ai/102f7cd9-6c60-4b32-ac21-99b12fcb3e27
 */
 
 import { App, Modal, Plugin, PluginSettingTab, Setting, Notice, TFolder } from 'obsidian';
+import {playlistTemplate, videoNoteTemplate} from 'templates'
 
 interface YouTubePlaylistData {
 	playlistId: string;
@@ -164,47 +165,7 @@ export default class YouTubePlaylistPlugin extends Plugin {
 
 	async createPlaylistNote(folderPath: string, playlistData: YouTubePlaylistData): Promise<void> {
 		const fileName = `${folderPath}/${this.sanitizeFileName(`${playlistData.title} - ${playlistData.channelTitle}`)}.md`;
-		
-		const content = `---
-type: youtube-playlist
-title: ${escapeYamlValue(playlistData.title)}
-playlist_id: ${playlistData.playlistId}
-url: ${playlistData.playlistUrl}
-channel: ${escapeYamlValue(playlistData.channelTitle)}
-video_count: ${playlistData.itemCount}
-created: ${new Date().toISOString()}
----
-
-# ${playlistData.title}
-
-**Channel:** ${playlistData.channelTitle}
-**Total Videos:** ${playlistData.itemCount}
-**Playlist URL:** ${playlistData.playlistUrl}
-
-## Description
-
-${playlistData.description || 'No description available'}
-
-## Videos
-
-\`\`\`base
-views:
-  - type: table
-    name: Videos
-    filters:
-      and:
-        - file.folder == this.file.folder
-        - file.name != this.file.name
-\`\`\`
-
-## Links
-
-- [View on YouTube](${playlistData.playlistUrl})
-
-## Notes
-
-
-`;
+		const content = playlistTemplate(playlistData, escapeYamlValue);
 
 		await this.app.vault.create(fileName, content);
 	}
@@ -215,46 +176,8 @@ views:
 		video: YouTubeVideo, 
 		playlistData: YouTubePlaylistData): Promise<void> {
 		const fileName = `${folderPath}/${String(video.position).padStart(2, '0')} - ${this.sanitizeFileName(video.title)}.md`;
-		const videoUrl = `https://www.youtube.com/watch?v=${video.videoId}`;
-		
-		const content = `---
-type: youtube-video
-title: ${escapeYamlValue(video.title)}
-video_id: ${video.videoId}
-url: ${videoUrl}
-playlist: ${escapeYamlValue(playlistData.title)}
-playlist_url: ${playlistData.playlistUrl}
-position: ${video.position}
-published: ${video.publishedAt}
-created: ${new Date().toISOString()}
----
-
-# ${video.title}
-
-**Position in Playlist:** ${video.position} of ${playlistData.itemCount}
-**Playlist:** [[${this.sanitizeFileName(`${playlistData.title} - ${playlistData.channelTitle}`)}|${playlistData.title}]]
-**Channel:** ${playlistData.channelTitle}
-**Published:** ${new Date(video.publishedAt).toLocaleDateString()}
-
-## Video URL
-
-${videoUrl}
-
-## Description
-
-${video.description || 'No description available'}
-
-## Notes
-
-<!-- Add your notes here -->
-
----
-
-**Navigation:**
-${video.position > 1 ? `← Previous: [[${String(video.position - 1).padStart(2, '0')} - ${this.sanitizeFileName(playlistData.videos[video.position - 2]?.title)}]]` : ''}
-${video.position < playlistData.itemCount ? `Next: [[${String(video.position + 1).padStart(2, '0')} - ${this.sanitizeFileName(playlistData.videos[video.position]?.title)}]] →` : ''}
-
-`;
+				
+		const content = videoNoteTemplate(playlistData, video, escapeYamlValue, this.sanitizeFileName);
 
 		await this.app.vault.create(fileName, content);
 	}
