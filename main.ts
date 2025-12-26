@@ -3,7 +3,7 @@
 brave://leo-ai/102f7cd9-6c60-4b32-ac21-99b12fcb3e27 
 */
 
-import { App, Modal, Plugin, PluginSettingTab, Setting, Notice, TFolder } from 'obsidian';
+import { App, Modal, Plugin, PluginSettingTab, Setting, Notice, TFolder, TFile } from 'obsidian';
 import {playlistTemplate, videoNoteTemplate} from 'templates'
 
 interface YouTubePlaylistData {
@@ -136,7 +136,8 @@ export default class YouTubePlaylistPlugin extends Plugin {
 		}
 	}
 
-	// The playlist metadata has been found and clicking OK button launches this method
+	// The playlist metadata has been found and clicking OK button launches this method to
+	// create the playlist note and all of it's video notes.
 	async createVideoNotes(playlistData: YouTubePlaylistData): Promise<void> {
 		try {
 			// Create folder structure
@@ -167,6 +168,12 @@ export default class YouTubePlaylistPlugin extends Plugin {
 		const fileName = `${folderPath}/${this.sanitizeFileName(`${playlistData.title} - ${playlistData.channelTitle}`)}.md`;
 		const content = playlistTemplate(playlistData);
 		await this.app.vault.create(fileName, content);
+		// open the playlist file in a new tab
+		const file = app.vault.getAbstractFileByPath(fileName);
+		if (file && file instanceof TFile) {
+			const leaf = app.workspace.getLeaf('tab');
+			leaf.openFile(file);
+		}
 	}
 
 
