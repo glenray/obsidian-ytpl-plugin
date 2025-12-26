@@ -54,6 +54,7 @@ export default class YouTubePlaylistPlugin extends Plugin {
 	}
 
 	async loadSettings() {
+		// overwrite empty object with default settings, then overwrite that with saved settings.
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 	}
 
@@ -273,8 +274,8 @@ ${video.position < playlistData.itemCount ? `Next: [[${String(video.position + 1
 	}
 
 	private sanitizeFileName(name: string): string {
-		// Remove invalid characters (\/:|[]{}<>#?*'"^) for file names including - '[]^|#' which interfere
-		// with Obsidian wikilinks
+		// Remove invalid characters (\/:|[]{}<>#?*'"^) for file names including - ([]^|#) 
+		// which interfere with Obsidian wikilinks
 		return name
 			.replace(/[\\/:|]/g, '-')
 			.replace(/[\[<{]/g , '(')
