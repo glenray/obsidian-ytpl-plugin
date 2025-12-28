@@ -169,9 +169,9 @@ export default class YouTubePlaylistPlugin extends Plugin {
 		const content = playlistTemplate(playlistData);
 		await this.app.vault.create(fileName, content);
 		// open the playlist file in a new tab
-		const file = app.vault.getAbstractFileByPath(fileName);
+		const file = this.app.vault.getAbstractFileByPath(fileName);
 		if (file && file instanceof TFile) {
-			const leaf = app.workspace.getLeaf('tab');
+			const leaf = this.app.workspace.getLeaf('tab');
 			leaf.openFile(file);
 		}
 	}
