@@ -28,7 +28,12 @@ views:
     filters:
       and:
         - file.folder == this.file.folder
-        - file.name != this.file.name
+        - type == "youtube-video"
+    order:
+      - file.name
+      - Completed
+    columnSize:
+      file.name: 532
 \`\`\`
 
 ## Links
@@ -52,6 +57,7 @@ playlist_url: ${playlistData.playlistUrl}
 position: ${video.position}
 published: ${video.publishedAt}
 created: ${new Date().toISOString()}
+Completed: false
 ---
 
 # ${video.title}
