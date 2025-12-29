@@ -1,5 +1,5 @@
 // The template for the playlist note
-export const playlistTemplate = (playlistData) => `---
+export const playlistTemplate = (playlistData: any) => `---
 type: youtube-playlist
 title: ${escapeYamlValue(playlistData.title)}
 playlist_id: ${playlistData.playlistId}
@@ -48,7 +48,7 @@ views:
 
 
 // The template for each video note
-export const videoNoteTemplate = (playlistData, video, sanitizeFileName) => `---
+export const videoNoteTemplate = (playlistData: any, video: any, sanitizeFileName: any) => `---
 type: youtube-video
 title: ${escapeYamlValue(video.title)}
 video_id: ${video.videoId}
