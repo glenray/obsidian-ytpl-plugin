@@ -7,6 +7,7 @@ url: ${playlistData.playlistUrl}
 channel: ${escapeYamlValue(playlistData.channelTitle)}
 video_count: ${playlistData.itemCount}
 created: ${new Date().toISOString()}
+status: WIP
 ---
 
 # ${playlistData.title}
