@@ -15,7 +15,6 @@ status: WIP
 **Channel:** ${playlistData.channelTitle}
 **Total Videos:** ${playlistData.itemCount}
 **Playlist URL:** ${playlistData.playlistUrl}
-A silly change
 
 ## Description
 
