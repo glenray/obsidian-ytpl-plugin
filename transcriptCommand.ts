@@ -1,4 +1,7 @@
-// 
+// Hot mess plugin command to add clickable time stamps to the unclickable timestamps
+// provided by the YouTube Transcript browser extension.
+// Glen Pritchard - 2026-01-10
+
 import { Plugin } from 'obsidian';
 
 export class TranscriptCommand {
