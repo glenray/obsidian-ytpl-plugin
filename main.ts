@@ -5,6 +5,7 @@ brave://leo-ai/102f7cd9-6c60-4b32-ac21-99b12fcb3e27
 
 import { App, Modal, Plugin, PluginSettingTab, Setting, Notice, TFolder, TFile } from 'obsidian';
 import {playlistTemplate, videoNoteTemplate} from 'templates'
+import { TranscriptCommand } from './transcriptCommand';
 
 interface YouTubePlaylistData {
 	playlistId: string;
@@ -42,6 +43,10 @@ export default class YouTubePlaylistPlugin extends Plugin {
 
 	async onload() {
 		await this.loadSettings();
+
+		// Initialize the transcript command
+		const transcriptCommand = new TranscriptCommand(this);
+		await transcriptCommand.init();
 
 		this.addCommand({
 			id: 'fetch-youtube-playlist',
