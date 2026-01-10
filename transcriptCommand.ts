@@ -1,4 +1,4 @@
-// transcriptCommand.ts - New file for transcript processing
+// 
 import { Plugin } from 'obsidian';
 
 export class TranscriptCommand {
@@ -82,7 +82,7 @@ export class TranscriptCommand {
 		return match ? match : null;
 	}
 
- processTranscript(transcript: string, videoUrl: string, videoId: string): string | null {
+	private processTranscript(transcript: string, videoUrl: string, videoId: string): string | null {
 		const timestampRegex = /\((\d{1,2}):(\d{2}):(\d{2})\)|\((\d{1,2}):(\d{2})\)/g;
 		
 		let hasTimestamps = false;
@@ -93,7 +93,7 @@ export class TranscriptCommand {
 			hasTimestamps = true;
 			let timeString: string;
 
-			// 2 possible formats are 'hh:mm:ss' or 'mm:ss'
+			// 2 possible time formats are 'hh:mm:ss' or 'mm:ss'
 			timeString = (hh !== undefined) ? `${hh}:${mm1}:${ss1}` : `${mm2}:${ss2}`
 
 			return `([${timeString}](${videoUrl}&#t=${timeString}))`;
