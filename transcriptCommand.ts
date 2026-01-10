@@ -82,18 +82,6 @@ export class TranscriptCommand {
 		return match ? match : null;
 	}
 
-	private timeToSeconds(timeString: string): number {
-		const parts = timeString.split(':').map(Number);
-		
-		if (parts.length === 2) {
-			return parts * 60 + parts;
-		} else if (parts.length === 3) {
-			return parts * 3600 + parts * 60 + parts;
-		}
-		
-		return 0;
-	}
-
 	private processTranscript(transcript: string, videoUrl: string, videoId: string): string | null {
 		const timestampRegex = /\((\d{1,2}):(\d{2}):(\d{2})\)|\((\d{1,2}):(\d{2})\)/g;
 		
@@ -109,14 +97,13 @@ export class TranscriptCommand {
 			if (hh !== undefined) {
 				// hh:mm:ss format
 				timeString = `${hh}:${mm1}:${ss1}`;
-				seconds = this.timeToSeconds(timeString);
 			} else {
 				// mm:ss format
-				timeString = `${mm2}:${ss2}`;
-				seconds = this.timeToSeconds(timeString);
-			}
+				timeString = `${mm2}:${ss2}`;	
+		}
 
-			return `([${timeString}](${videoUrl}&t=${seconds}#t=${timeString}))`;
+			// return `([${timeString}](${videoUrl}&t=${seconds}#t=${timeString}))`;
+			return `([${timeString}](${videoUrl}&#t=${timeString}))`;
 		});
 
 		return hasTimestamps ? processedTranscript : null;
