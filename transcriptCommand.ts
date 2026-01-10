@@ -116,7 +116,7 @@ export class TranscriptCommand {
 				seconds = this.timeToSeconds(timeString);
 			}
 
-			return `([${timeString}](${videoUrl}&t=${seconds}#t=${timeString}.50))`;
+			return `([${timeString}](${videoUrl}&t=${seconds}#t=${timeString}))`;
 		});
 
 		return hasTimestamps ? processedTranscript : null;
