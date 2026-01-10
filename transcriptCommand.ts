@@ -2,7 +2,7 @@
 // provided by the YouTube Transcript browser extension.
 // Glen Pritchard - 2026-01-10
 
-import { Plugin } from 'obsidian';
+import { Plugin, Notice } from 'obsidian';
 
 export class TranscriptCommand {
 	private plugin: Plugin;
