@@ -89,18 +89,12 @@ export class TranscriptCommand {
 		let processedTranscript = transcript;
 
 		processedTranscript = processedTranscript.replace(timestampRegex, (match, hh, mm1, ss1, mm2, ss2) => {
-			hasTimestamps = true;
 			
+			hasTimestamps = true;
 			let timeString: string;
-			let seconds: number;
 
-			if (hh !== undefined) {
-				// hh:mm:ss format
-				timeString = `${hh}:${mm1}:${ss1}`;
-			} else {
-				// mm:ss format
-				timeString = `${mm2}:${ss2}`;	
-		}
+			// 2 possible formats are 'hh:mm:ss' or 'mm:ss'
+			timeString = (hh !== undefined) ? `${hh}:${mm1}:${ss1}` : `${mm2}:${ss2}`
 
 			return `([${timeString}](${videoUrl}&#t=${timeString}))`;
 		});
