@@ -82,7 +82,7 @@ export class TranscriptCommand {
 		return match ? match : null;
 	}
 
-	private processTranscript(transcript: string, videoUrl: string, videoId: string): string | null {
+ processTranscript(transcript: string, videoUrl: string, videoId: string): string | null {
 		const timestampRegex = /\((\d{1,2}):(\d{2}):(\d{2})\)|\((\d{1,2}):(\d{2})\)/g;
 		
 		let hasTimestamps = false;
@@ -102,7 +102,6 @@ export class TranscriptCommand {
 				timeString = `${mm2}:${ss2}`;	
 		}
 
-			// return `([${timeString}](${videoUrl}&t=${seconds}#t=${timeString}))`;
 			return `([${timeString}](${videoUrl}&#t=${timeString}))`;
 		});
 
