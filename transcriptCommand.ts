@@ -64,9 +64,11 @@ export class TranscriptCommand {
 		}
 	}
 
-	private extractYouTubeUrl(content: string): Array | null {
+	private extractYouTubeUrl(content: string): object | null {
 		const regex = /https:\/\/www\.youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/g;
 		const matches = content.match(regex);
+
+		console.log(typeof(matches))
 
 		if (!matches || matches.length === 0) {
 			return null;
@@ -80,7 +82,7 @@ export class TranscriptCommand {
 		return matches;
 	}
 
-	private extractVideoId(url: string): Array | null {
+	private extractVideoId(url: string): object | null {
 		const match = url.match(/v=([a-zA-Z0-9_-]{11})/);
 		return match ? match : null;
 	}

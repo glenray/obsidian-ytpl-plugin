@@ -1,7 +1,7 @@
 {
 	"id": "glens-hot-mess",
 	"name": "Glen's Hot Mess",
-	"version": "1.2.1",
+	"version": "1.2.0",
 	"minAppVersion": "0.15.0",
 	"description": "A Hot Mess of Custom Plugin Functionality",
 	"author": "Glen Pritchard",
