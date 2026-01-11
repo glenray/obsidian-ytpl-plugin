@@ -59,7 +59,7 @@ export class PlaylistCommand {
 				throw new Error('Playlist not found');
 			}
 
-			const playlist = playlistData.items;
+			const playlist = playlistData.items[0];
 			const itemCount = playlist.contentDetails.itemCount;
 
 			const videos: YouTubeVideo[] = [];
