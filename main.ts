@@ -3,28 +3,9 @@
 brave://leo-ai/102f7cd9-6c60-4b32-ac21-99b12fcb3e27 
 */
 
-import { App, Modal, Plugin, PluginSettingTab, Setting, Notice, TFolder, TFile } from 'obsidian';
-import {playlistTemplate, videoNoteTemplate} from 'templates'
+import { App, Plugin, PluginSettingTab, Setting } from 'obsidian';
 import { TranscriptCommand } from './transcriptCommand';
-
-interface YouTubePlaylistData {
-	playlistId: string;
-	title: string;
-	description: string;
-	channelTitle: string;
-	itemCount: number;
-	thumbnailUrl: string;
-	playlistUrl: string;
-	videos: YouTubeVideo[];
-}
-
-interface YouTubeVideo {
-	title: string;
-	videoId: string;
-	publishedAt: string;
-	description: string;
-	position: number;
-}
+import { PlaylistCommand } from './playlistCommand';
 
 interface PluginSettings {
 	apiKey: string;
@@ -44,266 +25,21 @@ export default class YouTubePlaylistPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 
-		// Initialize the transcript command
 		const transcriptCommand = new TranscriptCommand(this);
 		await transcriptCommand.init();
 
-		this.addCommand({
-			id: 'fetch-youtube-playlist',
-			name: 'Fetch YouTube Playlist',
-			callback: () => {
-				new PlaylistModal(this.app, this).open();
-			}
-		});
+		const playlistCommand = new PlaylistCommand(this);
+		playlistCommand.init();
 
 		this.addSettingTab(new YouTubePlaylistSettingsTab(this));
 	}
 
 	async loadSettings() {
-		// overwrite empty object with default settings, then overwrite that with saved settings.
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 	}
 
 	async saveSettings() {
 		await this.saveData(this.settings);
-	}
-
-	async fetchPlaylistMetadata(playlistUrl: string): Promise<YouTubePlaylistData | null> {
-		try {
-			// Extract playlist ID from URL
-			const playlistId = this.extractPlaylistId(playlistUrl);
-			if (!playlistId) {
-				throw new Error('Invalid YouTube playlist URL');
-			}
-
-			if (!this.settings.apiKey) {
-				throw new Error('YouTube API key not configured. Please add it in settings.');
-			}
-
-			// Fetch playlist details
-			const playlistResponse = await fetch(
-				`https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&id=${playlistId}&key=${this.settings.apiKey}`
-			);
-
-			if (!playlistResponse.ok) {
-				throw new Error(`API Error: ${playlistResponse.statusText}`);
-			}
-
-			const playlistData = await playlistResponse.json();
-
-			if (!playlistData.items || playlistData.items.length === 0) {
-				throw new Error('Playlist not found');
-			}
-
-			const playlist = playlistData.items;
-			const itemCount = playlist[0].contentDetails.itemCount;
-
-			// Fetch all playlist items (videos) - handle pagination
-			const videos: YouTubeVideo[] = [];
-			let nextPageToken = '';
-			
-			do {
-				const itemsUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${playlistId}&maxResults=50&key=${this.settings.apiKey}${nextPageToken ? `&pageToken=${nextPageToken}` : ''}`;
-				
-				const itemsResponse = await fetch(itemsUrl);
-
-				if (!itemsResponse.ok) {
-					throw new Error(`API Error: ${itemsResponse.statusText}`);
-				}
-
-				const itemsData = await itemsResponse.json();
-
-				const pageVideos: YouTubeVideo[] = (itemsData.items || []).map((item: any) => ({
-					title: item.snippet.title,
-					videoId: item.snippet.resourceId.videoId,
-					publishedAt: item.snippet.publishedAt,
-					description: item.snippet.description,
-					position: item.snippet.position + 1 // 1-indexed position
-				}));
-
-				videos.push(...pageVideos);
-				nextPageToken = itemsData.nextPageToken || '';
-			} while (nextPageToken);
-
-			return {
-				playlistId: playlistId,
-				title: playlist[0].snippet.title,
-				description: playlist[0].snippet.description,
-				channelTitle: playlist[0].snippet.channelTitle,
-				itemCount: itemCount,
-				thumbnailUrl: playlist[0].snippet.thumbnails.default.url,
-				playlistUrl: playlistUrl,
-				videos: videos
-			};
-		} catch (error) {
-			console.error('Error fetching playlist:', error);
-			throw error;
-		}
-	}
-
-	// The playlist metadata has been found and clicking OK button launches this method to
-	// create the playlist note and all of it's video notes.
-	async createVideoNotes(playlistData: YouTubePlaylistData): Promise<void> {
-		try {
-			// Create folder structure
-			const playlistFolderName = this.sanitizeFileName(`${playlistData.title} - ${playlistData.channelTitle}`);
-			const fullPath = `${this.settings.notesFolder}/${playlistFolderName}`;
-			
-			// Ensure the folder exists
-			await this.ensureFolderExists(fullPath);
-
-			// Create main playlist note
-			await this.createPlaylistNote(fullPath, playlistData);
-
-			// Create individual notes for each video
-			let createdCount = 0;
-			for (const video of playlistData.videos) {
-				await this.createVideoNote(fullPath, video, playlistData);
-				createdCount++;
-			}
-
-			new Notice(`Created playlist note and ${createdCount} video notes in "${fullPath}"`);
-		} catch (error) {
-			console.error('Error creating video notes:', error);
-			throw error;
-		}
-	}
-
-	async createPlaylistNote(folderPath: string, playlistData: YouTubePlaylistData): Promise<void> {
-		const fileName = `${folderPath}/${this.sanitizeFileName(`${playlistData.title} - ${playlistData.channelTitle}`)}.md`;
-		const content = playlistTemplate(playlistData);
-		await this.app.vault.create(fileName, content);
-		// open the playlist file in a new tab
-		const file = this.app.vault.getAbstractFileByPath(fileName);
-		if (file && file instanceof TFile) {
-			const leaf = this.app.workspace.getLeaf('tab');
-			leaf.openFile(file);
-		}
-	}
-
-
-	async createVideoNote(
-		folderPath: string, 
-		video: YouTubeVideo, 
-		playlistData: YouTubePlaylistData): Promise<void> {
-		const fileName = `${folderPath}/${String(video.position).padStart(2, '0')} - ${this.sanitizeFileName(video.title)}.md`;
-				
-		const content = videoNoteTemplate(playlistData, video, this.sanitizeFileName);
-
-		await this.app.vault.create(fileName, content);
-	}
-
-	private async ensureFolderExists(folderPath: string): Promise<void> {
-		const folders = folderPath.split('/');
-		let currentPath = '';
-
-		for (const folder of folders) {
-			currentPath = currentPath ? `${currentPath}/${folder}` : folder;
-			
-			const exists = this.app.vault.getAbstractFileByPath(currentPath);
-			if (!exists) {
-				await this.app.vault.createFolder(currentPath);
-			}
-		}
-	}
-
-	private sanitizeFileName(name: string): string {
-		// Remove invalid characters (\/:|[]{}<>#?*"^) for file names including - ([]^|#) 
-		// which interfere with Obsidian wikilinks
-		return name
-			.replace(/[\\/:|]/g, '-')
-			.replace(/[\[<{]/g , '(')
-			.replace(/[\]>}]/g , ')')
-			.replace(/[#]/g, 'no ')
-			.replace(/[?*^]/g, '')
-			// single quotes are allowed in file names
-			// double quotes not allowed in windows file names
-			.replace(/["]/g, "'")
-			.replace(/\s+/g, ' ')
-			.trim()
-			.substring(0, 200); // Limit length
-	}
-
-	private extractPlaylistId(url: string): string | null {
-		try {
-			const urlObj = new URL(url);
-			const playlistId = urlObj.searchParams.get('list');
-			return playlistId;
-		} catch {
-			return null;
-		}
-	}
-}
-
-class PlaylistModal extends Modal {
-	constructor(app: App, private plugin: YouTubePlaylistPlugin) {
-		super(app);
-	}
-
-	onOpen() {
-		const { contentEl } = this;
-		contentEl.createEl('h2', { text: 'YouTube Playlist Fetcher' });
-
-		const inputEl = contentEl.createEl('input', {
-			type: 'text',
-			placeholder: 'https://www.youtube.com/playlist?list=PLxxxxxx',
-			value: this.plugin.settings.lastPlaylistUrl
-		});
-		inputEl.style.width = '100%';
-		inputEl.style.padding = '8px';
-		inputEl.style.marginBottom = '10px';
-
-		const statusEl = contentEl.createEl('div', { text: '' });
-		statusEl.style.marginTop = '10px';
-		statusEl.style.color = '#888';
-
-		const buttonContainer = contentEl.createEl('div');
-		buttonContainer.style.marginTop = '10px';
-		buttonContainer.style.display = 'flex';
-		buttonContainer.style.gap = '10px';
-
-		const submitBtn = buttonContainer.createEl('button', { text: 'Fetch Playlist' });
-		submitBtn.onclick = async () => {
-			const url = inputEl.value.trim();
-			
-			if (!url) {
-				new Notice('Please enter a playlist URL');
-				return;
-			}
-
-			try {
-				submitBtn.disabled = true;
-				statusEl.setText('Fetching playlist data...');
-				
-				this.plugin.settings.lastPlaylistUrl = url;
-				await this.plugin.saveSettings();
-
-				const playlistData = await this.plugin.fetchPlaylistMetadata(url);
-				
-				if (playlistData) {
-					statusEl.setText(`Found ${playlistData.videos.length} videos. Creating notes...`);
-					
-					await this.plugin.createVideoNotes(playlistData);
-					
-					new Notice(`Successfully created notes for "${playlistData.title}"`);
-					this.close();
-				}
-			} catch (error) {
-				new Notice(`Error: ${error.message}`);
-				statusEl.setText(`Error: ${error.message}`);
-				submitBtn.disabled = false;
-			}
-		};
-
-		const cancelBtn = buttonContainer.createEl('button', { text: 'Cancel' });
-		cancelBtn.onclick = () => {
-			this.close();
-		};
-	}
-
-	onClose() {
-		const { contentEl } = this;
-		contentEl.empty();
 	}
 }
 
