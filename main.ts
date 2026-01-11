@@ -3,7 +3,7 @@
 brave://leo-ai/102f7cd9-6c60-4b32-ac21-99b12fcb3e27 
 */
 
-import { App, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { AbstractInputSuggest, App, Plugin, PluginSettingTab, Setting, TFolder } from 'obsidian';
 import { TranscriptCommand } from './transcriptCommand';
 import { PlaylistCommand } from './playlistCommand';
 
@@ -11,12 +11,14 @@ interface PluginSettings {
 	apiKey: string;
 	lastPlaylistUrl: string;
 	notesFolder: string;
+	test: string;
 }
 
 const DEFAULT_SETTINGS: PluginSettings = {
 	apiKey: '',
 	lastPlaylistUrl: '',
-	notesFolder: ''
+	notesFolder: '',
+	test: ''
 };
 
 export default class GHM extends Plugin {
@@ -31,7 +33,7 @@ export default class GHM extends Plugin {
 		const playlistCommand = new PlaylistCommand(this);
 		playlistCommand.init();
 
-		this.addSettingTab(new YouTubePlaylistSettingsTab(this));
+		this.addSettingTab(new GHMSettingsTab(this));
 	}
 
 	async loadSettings() {
@@ -43,9 +45,8 @@ export default class GHM extends Plugin {
 	}
 }
 
-class YouTubePlaylistSettingsTab extends PluginSettingTab {
+class GHMSettingsTab extends PluginSettingTab {
 	plugin: GHM;
-
 	constructor(plugin: GHM) {
 		super(plugin.app, plugin);
 		this.plugin = plugin;
@@ -69,10 +70,10 @@ class YouTubePlaylistSettingsTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName('Notes Folder')
+			.setName('Playlist Folder')
 			.setDesc('Folder where playlist notes will be created')
 			.addText(text => text
-				.setPlaceholder('YouTube Playlists')
+				.setPlaceholder('Folder')
 				.setValue(this.plugin.settings.notesFolder)
 				.onChange(async (value) => {
 					this.plugin.settings.notesFolder = value;
@@ -86,6 +87,21 @@ class YouTubePlaylistSettingsTab extends PluginSettingTab {
 				.setValue(this.plugin.settings.lastPlaylistUrl)
 				.setDisabled(true));
 
+
+		new Setting(containerEl)
+			.setName('Test Folder Suggester')
+			.setDesc('Just a test')
+			.addText(text => {
+				text.inputEl.placeholder = "Type to suggest ...";
+				text.inputEl.value = this.plugin.settings.test;
+				const folderList = this.getFolders();
+				new CustomSuggester(this.app, text.inputEl, folderList, async (value) => {
+					this.plugin.settings.test = value;
+					await this.plugin.saveSettings();
+
+				});
+			});
+
 		containerEl.createEl('h3', { text: 'How to get a YouTube API Key' });
 		containerEl.createEl('ol', {}, (ol) => {
 			ol.createEl('li', { text: 'Go to Google Cloud Console (console.cloud.google.com)' });
@@ -95,4 +111,45 @@ class YouTubePlaylistSettingsTab extends PluginSettingTab {
 			ol.createEl('li', { text: 'Copy the API key and paste it above' });
 		});
 	}
+
+	getFolders(){
+		let options = []; 
+		const allFiles = app.vault.getAllLoadedFiles();
+		const folders = allFiles.filter(file => file instanceof TFolder);
+		
+		folders.forEach(folder => {
+			options.push(folder.path);
+		});
+		return options;
+	}
 }
+
+
+
+export class CustomSuggester extends AbstractInputSuggest<string> {
+	private options: string[];
+	private onSelect: (value: string) => void;
+
+	constructor(app: App, inputEl: HTMLInputElement, options: string[], onSelect: (value: string) => void) {
+		super(app, inputEl);
+		this.options = options;
+		this.onSelect = onSelect;
+		this.inputEl = inputEl;
+	}
+
+	getSuggestions(inputStr: string): string[] {
+		const lowerInput = inputStr.toLowerCase();
+		return this.options.filter(opt => opt.toLowerCase().includes(lowerInput));
+	}
+
+	renderSuggestion(value: string, el: HTMLElement): void {
+		el.setText(value);
+	}
+
+	selectSuggestion(value: string): void {
+		this.onSelect(value);
+		this.inputEl.value = value;
+		this.close();
+	}
+}
+
