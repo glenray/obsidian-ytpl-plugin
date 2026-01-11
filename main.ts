@@ -16,10 +16,10 @@ interface PluginSettings {
 const DEFAULT_SETTINGS: PluginSettings = {
 	apiKey: '',
 	lastPlaylistUrl: '',
-	notesFolder: 'YouTube Playlists'
+	notesFolder: ''
 };
 
-export default class YouTubePlaylistPlugin extends Plugin {
+export default class GHM extends Plugin {
 	settings: PluginSettings;
 
 	async onload() {
@@ -44,9 +44,9 @@ export default class YouTubePlaylistPlugin extends Plugin {
 }
 
 class YouTubePlaylistSettingsTab extends PluginSettingTab {
-	plugin: YouTubePlaylistPlugin;
+	plugin: GHM;
 
-	constructor(plugin: YouTubePlaylistPlugin) {
+	constructor(plugin: GHM) {
 		super(plugin.app, plugin);
 		this.plugin = plugin;
 	}
