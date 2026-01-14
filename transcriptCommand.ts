@@ -25,19 +25,16 @@ export class TranscriptCommand {
 	private async pasteTranscriptWithTimestamps(editor: any, view: any): Promise<void> {
 		try {
 			// Get clipboard content
-			const transcript = await navigator.clipboard.readText();
-			if (!transcript) {
+			const clipboardContent = await navigator.clipboard.readText();
+			if (!clipboardContent) {
 				new Notice('Clipboard is empty');
 				return;
 			}
 
-			// Get active note content
-			const noteContent = editor.getValue();
-
-			// Find YouTube URL
-			const videoUrl = this.extractYouTubeUrl(noteContent);
+			// Find YouTube URL in clipboard
+			const videoUrl = this.extractYouTubeUrl(clipboardContent);
 			if (!videoUrl) {
-				new Notice('No YouTube URL found in the active note');
+				new Notice('No YouTube URL found in clipboard');
 				return;
 			}
 
@@ -48,8 +45,8 @@ export class TranscriptCommand {
 				return;
 			}
 
-			// Process transcriptvideo
-			const processedTranscript = this.processTranscript(transcript, videoUrl, videoId);
+			// Process transcript
+			const processedTranscript = this.processTranscript(clipboardContent, videoUrl, videoId);
 			if (!processedTranscript) {
 				new Notice('No timestamps found in the transcript');
 				return;
@@ -75,7 +72,7 @@ export class TranscriptCommand {
 		}
 
 		if (matches.length > 1) {
-			new Notice('Multiple YouTube URLs found in the note. Please keep only one.');
+			new Notice('Multiple YouTube URLs found in clipboard. Please keep only one.');
 			return null;
 		}
 

@@ -112,11 +112,11 @@ class GHMSettingsTab extends PluginSettingTab {
 		});
 	}
 
-	getFolders(){
-		let options = []; 
-		const allFiles = app.vault.getAllLoadedFiles();
-		const folders = allFiles.filter(file => file instanceof TFolder);
-		
+	getFolders(): string[] {
+		const options: string[] = [];
+		const allFiles = this.app.vault.getAllLoadedFiles();
+		const folders = allFiles.filter((file): file is TFolder => file instanceof TFolder);
+
 		folders.forEach(folder => {
 			options.push(folder.path);
 		});
@@ -128,12 +128,13 @@ class GHMSettingsTab extends PluginSettingTab {
 
 export class CustomSuggester extends AbstractInputSuggest<string> {
 	private options: string[];
-	private onSelect: (value: string) => void;
+	private onSelectCallback: (value: string) => void;
+	private inputEl: HTMLInputElement;
 
 	constructor(app: App, inputEl: HTMLInputElement, options: string[], onSelect: (value: string) => void) {
 		super(app, inputEl);
 		this.options = options;
-		this.onSelect = onSelect;
+		this.onSelectCallback = onSelect;
 		this.inputEl = inputEl;
 	}
 
@@ -147,7 +148,7 @@ export class CustomSuggester extends AbstractInputSuggest<string> {
 	}
 
 	selectSuggestion(value: string): void {
-		this.onSelect(value);
+		this.onSelectCallback(value);
 		this.inputEl.value = value;
 		this.close();
 	}
