@@ -104,25 +104,82 @@ export class PlaylistCommand {
 		}
 	}
 
-	async createVideoNotes(playlistData: YouTubePlaylistData): Promise<void> {
+	async createVideoNotes(playlistData: YouTubePlaylistData): Promise<{ created: number; skipped: number; isUpdate: boolean }> {
 		try {
 			const playlistFolderName = this.sanitizeFileName(`${playlistData.title} - ${playlistData.channelTitle}`);
 			const fullPath = `${this.plugin.settings.notesFolder}/${playlistFolderName}`;
-			
+
+			// Check if this is an update (folder already exists)
+			const folderExists = this.plugin.app.vault.getAbstractFileByPath(fullPath);
+			const isUpdate = !!folderExists;
+
 			await this.ensureFolderExists(fullPath);
-			await this.createPlaylistNote(fullPath, playlistData);
+
+			// Get existing video IDs if updating
+			const existingVideoIds = isUpdate ? await this.getExistingVideoIds(fullPath) : new Set<string>();
+
+			// Only create playlist note if it doesn't exist
+			const playlistNotePath = `${fullPath}/${this.sanitizeFileName(`${playlistData.title} - ${playlistData.channelTitle}`)}.md`;
+			const playlistNoteExists = this.plugin.app.vault.getAbstractFileByPath(playlistNotePath);
+			if (!playlistNoteExists) {
+				await this.createPlaylistNote(fullPath, playlistData);
+			}
 
 			let createdCount = 0;
+			let skippedCount = 0;
+
 			for (const video of playlistData.videos) {
+				if (existingVideoIds.has(video.videoId)) {
+					skippedCount++;
+					continue;
+				}
 				await this.createVideoNote(fullPath, video, playlistData);
 				createdCount++;
 			}
 
-			new Notice(`Created playlist note and ${createdCount} video notes in "${fullPath}"`);
+			if (isUpdate) {
+				if (createdCount > 0) {
+					new Notice(`Added ${createdCount} new video notes (${skippedCount} already existed) in "${fullPath}"`);
+				} else {
+					new Notice(`Playlist is up to date. All ${skippedCount} videos already have notes.`);
+				}
+			} else {
+				new Notice(`Created playlist note and ${createdCount} video notes in "${fullPath}"`);
+			}
+
+			return { created: createdCount, skipped: skippedCount, isUpdate };
 		} catch (error) {
 			console.error('Error creating video notes:', error);
 			throw error;
 		}
+	}
+
+	private async getExistingVideoIds(folderPath: string): Promise<Set<string>> {
+		const videoIds = new Set<string>();
+		const folder = this.plugin.app.vault.getAbstractFileByPath(folderPath);
+
+		if (!folder || !(folder as any).children) {
+			return videoIds;
+		}
+
+		const files = (folder as any).children.filter((f: any) => f instanceof TFile && f.extension === 'md');
+
+		for (const file of files) {
+			try {
+				const content = await this.plugin.app.vault.read(file);
+				const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+				if (frontmatterMatch) {
+					const videoIdMatch = frontmatterMatch[1].match(/video_id:\s*(.+)/);
+					if (videoIdMatch) {
+						videoIds.add(videoIdMatch[1].trim());
+					}
+				}
+			} catch (e) {
+				// Skip files that can't be read
+			}
+		}
+
+		return videoIds;
 	}
 
 	private async createPlaylistNote(folderPath: string, playlistData: YouTubePlaylistData): Promise<void> {
@@ -224,17 +281,26 @@ class PlaylistModal extends Modal {
 			try {
 				submitBtn.disabled = true;
 				statusEl.setText('Fetching playlist data...');
-				
+
 				this.plugin.settings.lastPlaylistUrl = url;
 				await this.plugin.saveSettings();
 
 				const playlistCommand = new PlaylistCommand(this.plugin);
 				const playlistData = await playlistCommand.fetchPlaylistMetadata(url);
-				
+
 				if (playlistData) {
-					statusEl.setText(`Found ${playlistData.videos.length} videos. Creating notes...`);
-					await playlistCommand.createVideoNotes(playlistData);
-					new Notice(`Successfully created notes for "${playlistData.title}"`);
+					statusEl.setText(`Found ${playlistData.videos.length} videos. Checking for existing notes...`);
+					const result = await playlistCommand.createVideoNotes(playlistData);
+
+					if (result.isUpdate) {
+						if (result.created > 0) {
+							new Notice(`Added ${result.created} new videos to "${playlistData.title}"`);
+						} else {
+							new Notice(`"${playlistData.title}" is already up to date`);
+						}
+					} else {
+						new Notice(`Successfully created notes for "${playlistData.title}"`);
+					}
 					this.close();
 				}
 			} catch (error) {
