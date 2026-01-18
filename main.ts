@@ -11,14 +11,12 @@ interface PluginSettings {
 	apiKey: string;
 	lastPlaylistUrl: string;
 	notesFolder: string;
-	test: string;
 }
 
 const DEFAULT_SETTINGS: PluginSettings = {
 	apiKey: '',
 	lastPlaylistUrl: '',
-	notesFolder: '',
-	test: ''
+	notesFolder: ''
 };
 
 export default class GHM extends Plugin {
@@ -72,13 +70,15 @@ class GHMSettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('Playlist Folder')
 			.setDesc('Folder where playlist notes will be created')
-			.addText(text => text
-				.setPlaceholder('Folder')
-				.setValue(this.plugin.settings.notesFolder)
-				.onChange(async (value) => {
+			.addText(text => {
+				text.inputEl.placeholder = "Type to suggest ...";
+				text.inputEl.value = this.plugin.settings.notesFolder;
+				const folderList = this.getFolders();
+				new CustomSuggester(this.app, text.inputEl, folderList, async (value) => {
 					this.plugin.settings.notesFolder = value;
 					await this.plugin.saveSettings();
-				}));
+				});
+			});
 
 		new Setting(containerEl)
 			.setName('Last Playlist URL')
@@ -87,20 +87,6 @@ class GHMSettingsTab extends PluginSettingTab {
 				.setValue(this.plugin.settings.lastPlaylistUrl)
 				.setDisabled(true));
 
-
-		new Setting(containerEl)
-			.setName('Test Folder Suggester')
-			.setDesc('Just a test')
-			.addText(text => {
-				text.inputEl.placeholder = "Type to suggest ...";
-				text.inputEl.value = this.plugin.settings.test;
-				const folderList = this.getFolders();
-				new CustomSuggester(this.app, text.inputEl, folderList, async (value) => {
-					this.plugin.settings.test = value;
-					await this.plugin.saveSettings();
-
-				});
-			});
 
 		containerEl.createEl('h3', { text: 'How to get a YouTube API Key' });
 		containerEl.createEl('ol', {}, (ol) => {
