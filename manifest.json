@@ -1,7 +1,7 @@
 {
 	"id": "glens-hot-mess",
 	"name": "GHM",
-	"version": "1.4.0",
+	"version": "1.4.1",
 	"minAppVersion": "0.15.0",
 	"description": "A Hot Mess of Custom Functionality",
 	"author": "Glen Pritchard",
